@@ -69,4 +69,17 @@
     <ProjectReference Include="..\MdViewer.Rendering\MdViewer.Rendering.csproj" />
   </ItemGroup>
 
+  <Target Name="EnsurePublishReferenceAssemblies" BeforeTargets="CoreCompile"
+          Condition="'$(PublishProfile)' != '' and '$(BuildProjectReferences)' == 'false' and '@(ProjectReference)' != ''">
+    <MSBuild Projects="@(ProjectReference)"
+             Targets="Build"
+             BuildInParallel="true"
+             Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework);BuildProjectReferences=true" />
+    <MSBuild Projects="@(ProjectReference)"
+             Targets="Build"
+             BuildInParallel="true"
+             Condition="'$(RuntimeIdentifier)' != ''"
+             Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework);RuntimeIdentifier=$(RuntimeIdentifier);BuildProjectReferences=true" />
+  </Target>
+
 </Project>

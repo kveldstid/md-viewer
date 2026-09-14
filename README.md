@@ -4,6 +4,7 @@ KT MD Viewer is a cross-platform Markdown viewer for Windows and Linux, built on
 
 See [docs/SPECIFICATION.md](docs/SPECIFICATION.md) for the full specification.
 
+
 ---
 
 ## What this build is
