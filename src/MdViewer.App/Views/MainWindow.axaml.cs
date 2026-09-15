@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using MdViewer.App.Services;
 using MdViewer.App.ViewModels;
 using MdViewer.Core.Documents;
@@ -49,6 +50,15 @@ public partial class MainWindow : Window
             documentPane.AddHandler(
                 InputElement.PointerWheelChangedEvent,
                 OnDocumentPointerWheelChanged,
+                RoutingStrategies.Tunnel);
+        }
+
+        var tabStrip = this.FindControl<ListBox>("TabStrip");
+        if (tabStrip is not null)
+        {
+            tabStrip.AddHandler(
+                InputElement.PointerPressedEvent,
+                OnTabStripPointerPressed,
                 RoutingStrategies.Tunnel);
         }
 
@@ -570,20 +580,6 @@ public partial class MainWindow : Window
         return candidate.StartsWith(root, StringComparison.OrdinalIgnoreCase);
     }
 
-    private void OnOpenTreeItemInEditorClick(object? sender, RoutedEventArgs e)
-    {
-        var model = Model;
-        if (model is null) return;
-
-        var tree = this.FindControl<TreeView>("FileTree");
-        model.OpenTreeItemInEditorCommand.Execute(tree?.SelectedItem as FileTreeItemViewModel);
-    }
-
-    private void OnOpenSelectedDocumentInEditorClick(object? sender, RoutedEventArgs e)
-    {
-        Model?.OpenSelectedDocumentInEditorCommand.Execute(null);
-    }
-
     /// <summary>Single click opens the document in its own tab.</summary>
     private void OnTreeSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
@@ -674,4 +670,65 @@ public partial class MainWindow : Window
             model.StatusMessage = $"Could not copy the path: {ex.Message}";
         }
     }
+
+    // ==================================================== tab context menu
+
+    /// <summary>
+    /// The tab the right-click landed on. Recorded on the press rather than
+    /// read off the selection, because right-clicking a tab should act on that
+    /// tab without stealing the reader's current document.
+    /// </summary>
+    private DocumentTabViewModel? _tabContextTarget;
+
+    private void OnTabStripPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(this).Properties.IsRightButtonPressed) return;
+
+        _tabContextTarget = (e.Source as Control)
+            ?.GetSelfAndVisualAncestors()
+            .OfType<ListBoxItem>()
+            .FirstOrDefault()
+            ?.DataContext as DocumentTabViewModel;
+    }
+
+    private void OnTabContextMenuOpening(object? sender, CancelEventArgs e)
+    {
+        if (sender is not ContextMenu menu) return;
+
+        var model = Model;
+        var tab = _tabContextTarget;
+
+        // Right-clicking the empty strip beside the tabs has nothing to act on.
+        if (model is null || tab is null || !model.Tabs.Contains(tab))
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        var index = model.Tabs.IndexOf(tab);
+        var count = model.Tabs.Count;
+
+        foreach (var entry in menu.Items.OfType<MenuItem>())
+        {
+            entry.IsEnabled = entry.Name switch
+            {
+                "CloseTabsToLeftMenuItem" => index > 0,
+                "CloseTabsToRightMenuItem" => index < count - 1,
+                "CloseOtherTabsMenuItem" => count > 1,
+                _ => count > 0,
+            };
+        }
+    }
+
+    private void OnCloseAllTabsClick(object? sender, RoutedEventArgs e) =>
+        Model?.CloseAllTabsCommand.Execute(null);
+
+    private void OnCloseTabsToLeftClick(object? sender, RoutedEventArgs e) =>
+        Model?.CloseTabsToLeftCommand.Execute(_tabContextTarget);
+
+    private void OnCloseTabsToRightClick(object? sender, RoutedEventArgs e) =>
+        Model?.CloseTabsToRightCommand.Execute(_tabContextTarget);
+
+    private void OnCloseOtherTabsClick(object? sender, RoutedEventArgs e) =>
+        Model?.CloseOtherTabsCommand.Execute(_tabContextTarget);
 }

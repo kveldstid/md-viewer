@@ -1217,6 +1217,51 @@ public partial class MainWindowViewModel : ViewModelBase
         SelectedTab = null;
     }
 
+    [RelayCommand]
+    private void CloseTabsToLeft(DocumentTabViewModel? tab)
+    {
+        if (tab is null) return;
+
+        var index = Tabs.IndexOf(tab);
+        if (index <= 0) return;
+
+        for (var i = index - 1; i >= 0; i--)
+        {
+            Tabs.RemoveAt(i);
+        }
+
+        SelectedTab = tab;
+    }
+
+    [RelayCommand]
+    private void CloseTabsToRight(DocumentTabViewModel? tab)
+    {
+        if (tab is null) return;
+
+        var index = Tabs.IndexOf(tab);
+        if (index < 0) return;
+
+        for (var i = Tabs.Count - 1; i > index; i--)
+        {
+            Tabs.RemoveAt(i);
+        }
+
+        SelectedTab = tab;
+    }
+
+    [RelayCommand]
+    private void CloseOtherTabs(DocumentTabViewModel? tab)
+    {
+        if (tab is null || !Tabs.Contains(tab)) return;
+
+        for (var i = Tabs.Count - 1; i >= 0; i--)
+        {
+            if (!ReferenceEquals(Tabs[i], tab)) Tabs.RemoveAt(i);
+        }
+
+        SelectedTab = tab;
+    }
+
     // ============================================================ view mode
 
     /// <summary>

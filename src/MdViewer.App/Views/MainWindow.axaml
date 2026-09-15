@@ -81,9 +81,27 @@
                    Classes="tab-strip"
                    ItemsSource="{Binding Tabs}"
                    SelectedItem="{Binding SelectedTab, Mode=TwoWay}">
+            <ListBox.ContextMenu>
+              <ContextMenu x:Name="TabContextMenu" Opening="OnTabContextMenuOpening">
+                <MenuItem x:Name="CloseAllTabsMenuItem"
+                          Header="Close All"
+                          Click="OnCloseAllTabsClick" />
+                <Separator />
+                <MenuItem x:Name="CloseTabsToLeftMenuItem"
+                          Header="Close to left"
+                          Click="OnCloseTabsToLeftClick" />
+                <MenuItem x:Name="CloseTabsToRightMenuItem"
+                          Header="Close to right"
+                          Click="OnCloseTabsToRightClick" />
+                <MenuItem x:Name="CloseOtherTabsMenuItem"
+                          Header="Close all other"
+                          Click="OnCloseOtherTabsClick" />
+              </ContextMenu>
+            </ListBox.ContextMenu>
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="vm:DocumentTabViewModel">
-                <Border Padding="12,7,6,7" MinWidth="120" MaxWidth="220">
+                <Border Padding="12,7,6,7" MinWidth="120" MaxWidth="220"
+                        Background="Transparent">
                   <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6">
 
                     <Ellipse Grid.Column="0"

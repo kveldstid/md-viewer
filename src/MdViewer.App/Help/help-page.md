@@ -26,6 +26,19 @@ This help page is bundled with the app and rendered by the same Markdown pipelin
 | `Page Up` / `Page Down` | Scroll one page up / down |
 | `Home` / `End` | Go to top / bottom of the document |
 
+## Tab context menu
+
+Right-click a document tab on the tab line:
+
+| Command | Action |
+| --- | --- |
+| Close All | Closes every open tab and returns to the start page |
+| Close to left | Closes all tabs before the one clicked |
+| Close to right | Closes all tabs after the one clicked |
+| Close all other | Closes every tab except the one clicked |
+
+Entries that would close nothing are greyed out.
+
 ## Explorer context menu
 
 Right-click an entry in the Explorer tree:
