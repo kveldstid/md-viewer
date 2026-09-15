@@ -144,6 +144,29 @@
                 ToolTip.Tip="Folders whose subtree contains no Markdown file are left out of the file tree."
                 IsChecked="{Binding Settings.HideFoldersWithoutMarkdown, Mode=TwoWay}" />
 
+      <!-- ========================= Editor ======================= -->
+      <TextBlock Classes="md-h4" Text="Editor" Margin="0,16,0,0" />
+      <Border Classes="md-heading-rule" Margin="0,0,0,8" />
+
+      <TextBlock Classes="md-caption"
+                 TextWrapping="Wrap"
+                 Margin="0,0,0,8"
+                 Text="The program used by &quot;Open in editor&quot; in the Explorer context menu. MdViewer stays a reader; editing happens here." />
+
+      <Grid ColumnDefinitions="220,*,Auto">
+        <TextBlock Grid.Column="0" Classes="md-body" VerticalAlignment="Center" Text="Default editor" />
+        <TextBox Grid.Column="1"
+                 Margin="0,0,8,0"
+                 VerticalAlignment="Center"
+                 PlaceholderText="No editor chosen"
+                 Text="{Binding Settings.DefaultEditorPath, Mode=TwoWay}" />
+        <Button Grid.Column="2"
+                Classes="start-action"
+                VerticalAlignment="Center"
+                Content="Browse…"
+                Command="{Binding PickDefaultEditorCommand}" />
+      </Grid>
+
       <!-- ==================== File watching ==================== -->
       <TextBlock Classes="md-h4" Text="File watching" Margin="0,16,0,0" />
       <Border Classes="md-heading-rule" Margin="0,0,0,8" />

@@ -9,4 +9,7 @@ public interface IStorageService
     Task<IReadOnlyList<string>> PickMarkdownFilesAsync();
 
     Task<string?> PickFolderAsync();
+
+    /// <summary>Picks the program used to edit Markdown files.</summary>
+    Task<string?> PickEditorExecutableAsync();
 }

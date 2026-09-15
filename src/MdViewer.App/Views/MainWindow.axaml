@@ -257,6 +257,20 @@
                     </StackPanel>
                   </TreeDataTemplate>
                 </TreeView.ItemTemplate>
+                <TreeView.ContextMenu>
+                  <ContextMenu Opening="OnFileTreeContextMenuOpening">
+                    <MenuItem x:Name="OpenInEditorMenuItem"
+                              Header="Open in editor"
+                              Click="OnOpenTreeItemInEditorClick" />
+                    <Separator />
+                    <MenuItem x:Name="RevealInFileManagerMenuItem"
+                              Header="Show in File Explorer"
+                              Click="OnRevealTreeItemClick" />
+                    <MenuItem x:Name="CopyFullPathMenuItem"
+                              Header="Copy full path"
+                              Click="OnCopyTreeItemPathClick" />
+                  </ContextMenu>
+                </TreeView.ContextMenu>
               </TreeView>
 
               <StackPanel Margin="16,10" Spacing="8"

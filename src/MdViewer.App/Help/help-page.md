@@ -26,6 +26,19 @@ This help page is bundled with the app and rendered by the same Markdown pipelin
 | `Page Up` / `Page Down` | Scroll one page up / down |
 | `Home` / `End` | Go to top / bottom of the document |
 
+## Explorer context menu
+
+Right-click an entry in the Explorer tree:
+
+| Command | Applies to | Action |
+| --- | --- | --- |
+| Open in editor | Files | Opens the file in the editor set under Settings → Editor |
+| Show in File Explorer | Files and folders | Reveals the file in the system file manager, or opens the folder |
+| Copy full path | Files and folders | Copies the absolute path to the clipboard |
+
+The editor is chosen under **Settings → Editor → Default editor**. Until one is
+set, *Open in editor* says so instead of guessing at a program.
+
 ## Supported Markdown dialect (SPECIFICATION.md §5.1)
 
 The app uses Markdig with an explicit extension set:

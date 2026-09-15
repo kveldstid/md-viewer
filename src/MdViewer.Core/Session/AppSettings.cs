@@ -68,6 +68,15 @@ public sealed class AppSettings
 
     public bool ShowFrontMatter { get; set; }
 
+    // ================================================================ editor
+
+    /// <summary>
+    /// Full path to the program used by "Open in editor". Empty means no
+    /// editor has been chosen, and the command reports that instead of
+    /// guessing at one.
+    /// </summary>
+    public string DefaultEditorPath { get; set; } = string.Empty;
+
     // ======================================================== file watching
 
     public bool EnableFileWatching { get; set; } = true;

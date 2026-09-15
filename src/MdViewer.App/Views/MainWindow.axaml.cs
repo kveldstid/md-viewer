@@ -1,6 +1,8 @@
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using MdViewer.App.Services;
@@ -589,5 +591,74 @@ public partial class MainWindow : Window
         if (tree.SelectedItem is not FileTreeItemViewModel item) return;
 
         _ = Model.ActivateTreeItemAsync(item);
+    }
+
+    // =============================================== explorer context menu
+
+    private FileTreeItemViewModel? SelectedTreeItem =>
+        this.FindControl<TreeView>("FileTree")?.SelectedItem as FileTreeItemViewModel;
+
+    /// <summary>
+    /// Greys out what the current selection cannot do rather than letting the
+    /// command fail into the status bar: opening in an editor is for files,
+    /// and everything needs something selected.
+    /// </summary>
+    private void OnFileTreeContextMenuOpening(object? sender, CancelEventArgs e)
+    {
+        if (sender is not ContextMenu menu) return;
+
+        var item = SelectedTreeItem;
+        var hasSelection = item is not null && !string.IsNullOrWhiteSpace(item.FullPath);
+
+        foreach (var entry in menu.Items.OfType<MenuItem>())
+        {
+            entry.IsEnabled = entry.Name switch
+            {
+                "OpenInEditorMenuItem" => hasSelection && !item!.IsDirectory,
+                _ => hasSelection,
+            };
+        }
+    }
+
+    private void OnOpenTreeItemInEditorClick(object? sender, RoutedEventArgs e) =>
+        Model?.OpenTreeItemInEditorCommand.Execute(SelectedTreeItem);
+
+    private void OnRevealTreeItemClick(object? sender, RoutedEventArgs e) =>
+        Model?.RevealTreeItemInFileManagerCommand.Execute(SelectedTreeItem);
+
+    /// <summary>
+    /// Copying lives here rather than in the view model because the clipboard
+    /// hangs off the top level, which the view model deliberately knows nothing about.
+    /// </summary>
+    private async void OnCopyTreeItemPathClick(object? sender, RoutedEventArgs e)
+    {
+        var model = Model;
+        if (model is null) return;
+
+        var item = SelectedTreeItem;
+        if (item is null || string.IsNullOrWhiteSpace(item.FullPath))
+        {
+            model.StatusMessage = "Select a file or folder in Explorer first.";
+            return;
+        }
+
+        var clipboard = Clipboard;
+        if (clipboard is null)
+        {
+            model.StatusMessage = "The clipboard is not available.";
+            return;
+        }
+
+        var fullPath = Path.GetFullPath(item.FullPath);
+
+        try
+        {
+            await clipboard.SetTextAsync(fullPath);
+            model.StatusMessage = $"Copied {fullPath}";
+        }
+        catch (Exception ex)
+        {
+            model.StatusMessage = $"Could not copy the path: {ex.Message}";
+        }
     }
 }

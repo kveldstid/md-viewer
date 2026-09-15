@@ -56,4 +56,27 @@ public sealed class StorageService : IStorageService
 
         return folders.Count == 0 ? null : folders[0].TryGetLocalPath();
     }
+
+    public async Task<string?> PickEditorExecutableAsync()
+    {
+        var fileTypes = new List<FilePickerFileType>();
+        if (OperatingSystem.IsWindows())
+        {
+            fileTypes.Add(new FilePickerFileType("Programs")
+            {
+                Patterns = new[] { "*.exe", "*.cmd", "*.bat" }
+            });
+        }
+
+        fileTypes.Add(FilePickerFileTypes.All);
+
+        var files = await _topLevel.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Choose the editor for Markdown files",
+            AllowMultiple = false,
+            FileTypeFilter = fileTypes
+        });
+
+        return files.Count == 0 ? null : files[0].TryGetLocalPath();
+    }
 }

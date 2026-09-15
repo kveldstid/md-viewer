@@ -753,6 +753,119 @@ public partial class MainWindowViewModel : ViewModelBase
         if (!string.IsNullOrEmpty(folder)) SetWorkspace(folder);
     }
 
+    // =============================================================== editor
+
+    [RelayCommand]
+    private async Task PickDefaultEditorAsync()
+    {
+        if (Storage is null) return;
+
+        var path = await Storage.PickEditorExecutableAsync().ConfigureAwait(true);
+        if (string.IsNullOrWhiteSpace(path)) return;
+
+        Settings.DefaultEditorPath = Path.GetFullPath(path);
+        StatusMessage = $"Editor set to {Path.GetFileName(Settings.DefaultEditorPath)}.";
+    }
+
+    /// <summary>Opens a file from the explorer tree in the configured editor.</summary>
+    [RelayCommand]
+    private void OpenTreeItemInEditor(FileTreeItemViewModel? item)
+    {
+        if (item is null || item.IsDirectory || string.IsNullOrWhiteSpace(item.FullPath))
+        {
+            StatusMessage = "Select a file in Explorer first.";
+            return;
+        }
+
+        var editorPath = Settings.DefaultEditorPath.Trim();
+        if (editorPath.Length == 0)
+        {
+            StatusMessage = "No editor is set. Choose one in Settings first.";
+            return;
+        }
+
+        editorPath = Path.GetFullPath(editorPath);
+        if (!File.Exists(editorPath))
+        {
+            StatusMessage = $"The configured editor was not found: {editorPath}";
+            return;
+        }
+
+        var documentPath = Path.GetFullPath(item.FullPath);
+        if (!File.Exists(documentPath))
+        {
+            StatusMessage = $"File not found: {documentPath}";
+            return;
+        }
+
+        try
+        {
+            var start = new ProcessStartInfo { FileName = editorPath, UseShellExecute = false };
+            start.ArgumentList.Add(documentPath);
+            using var process = Process.Start(start);
+
+            StatusMessage = $"Opened {Path.GetFileName(documentPath)} in {Path.GetFileName(editorPath)}.";
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or IOException)
+        {
+            StatusMessage = $"Could not start the editor: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Shows a file or folder from the explorer tree in the system file
+    /// manager. Files are revealed with the entry selected; folders are opened.
+    /// </summary>
+    [RelayCommand]
+    private void RevealTreeItemInFileManager(FileTreeItemViewModel? item)
+    {
+        if (item is null || string.IsNullOrWhiteSpace(item.FullPath))
+        {
+            StatusMessage = "Select a file or folder in Explorer first.";
+            return;
+        }
+
+        var fullPath = Path.GetFullPath(item.FullPath);
+        if (item.IsDirectory ? !Directory.Exists(fullPath) : !File.Exists(fullPath))
+        {
+            StatusMessage = $"Not found on disk: {fullPath}";
+            return;
+        }
+
+        try
+        {
+            if (!item.IsDirectory && OperatingSystem.IsWindows())
+            {
+                // Explorer parses its own command line, so the path is quoted
+                // inside the single /select argument rather than passed apart.
+                using var reveal = Process.Start(new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"/select,\"{fullPath}\"",
+                    UseShellExecute = false
+                });
+            }
+            else
+            {
+                var target = item.IsDirectory
+                    ? fullPath
+                    : Path.GetDirectoryName(fullPath) ?? fullPath;
+
+                using var open = Process.Start(new ProcessStartInfo
+                {
+                    FileName = target,
+                    UseShellExecute = true
+                });
+            }
+
+            StatusMessage = null;
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or IOException)
+        {
+            StatusMessage = $"Could not open the file manager: {ex.Message}";
+        }
+    }
+
     // ============================================================ workspace
 
     public void SetWorkspace(string folder)

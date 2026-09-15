@@ -91,6 +91,15 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     private bool _showFrontMatter;
 
+    // ================================================================ editor
+
+    /// <summary>
+    /// The program launched by "Open in editor". Empty until the reader picks
+    /// one: MdViewer never guesses at an editor on the reader's behalf.
+    /// </summary>
+    [ObservableProperty]
+    private string _defaultEditorPath = string.Empty;
+
     // ======================================================== file watching
 
     private bool _enableFileWatching = true;
@@ -160,6 +169,7 @@ public partial class SettingsViewModel : ViewModelBase
 
         ShowLineNumbersInRawView = settings.ShowLineNumbersInRawView;
         ShowFrontMatter = settings.ShowFrontMatter;
+        DefaultEditorPath = settings.DefaultEditorPath;
         EnableFileWatching = settings.EnableFileWatching;
 
         HideFoldersWithoutMarkdown = settings.HideFoldersWithoutMarkdown;
@@ -195,6 +205,7 @@ public partial class SettingsViewModel : ViewModelBase
 
         settings.ShowLineNumbersInRawView = ShowLineNumbersInRawView;
         settings.ShowFrontMatter = ShowFrontMatter;
+        settings.DefaultEditorPath = DefaultEditorPath;
         settings.EnableFileWatching = EnableFileWatching;
 
         settings.HideFoldersWithoutMarkdown = HideFoldersWithoutMarkdown;
