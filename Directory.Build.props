@@ -8,6 +8,9 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- Windows RIDs are required by src/MISX-Install (MSIX packaging), which
+         builds the app for a concrete runtime identifier. -->
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <PropertyGroup>

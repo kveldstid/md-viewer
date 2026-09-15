@@ -492,8 +492,8 @@ public partial class MainWindow : Window
     // ============================================================== file tree
 
     /// <summary>
-    /// Selecting a tab highlights and focuses the matching entry in the file
-    /// tree, expanding the folders on the way down and scrolling it into view.
+    /// Selecting a tab highlights the matching entry in the file tree,
+    /// expanding the folders on the way down and scrolling it into view.
     /// </summary>
     private void SyncTreeSelectionWithSelectedTab()
     {
@@ -517,14 +517,13 @@ public partial class MainWindow : Window
         }
 
         // Containers for freshly expanded folders are only realised after the
-        // next layout pass, so focusing has to wait for it.
+        // next layout pass, so scrolling has to wait for it.
         Dispatcher.UIThread.Post(
             () =>
             {
                 if (tree.TreeContainerFromItem(item) is TreeViewItem container)
                 {
                     container.BringIntoView();
-                    container.Focus();
                 }
             },
             DispatcherPriority.Loaded);
@@ -569,6 +568,20 @@ public partial class MainWindow : Window
     {
         var root = Path.TrimEndingDirectorySeparator(directory) + Path.DirectorySeparatorChar;
         return candidate.StartsWith(root, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void OnOpenTreeItemInEditorClick(object? sender, RoutedEventArgs e)
+    {
+        var model = Model;
+        if (model is null) return;
+
+        var tree = this.FindControl<TreeView>("FileTree");
+        model.OpenTreeItemInEditorCommand.Execute(tree?.SelectedItem as FileTreeItemViewModel);
+    }
+
+    private void OnOpenSelectedDocumentInEditorClick(object? sender, RoutedEventArgs e)
+    {
+        Model?.OpenSelectedDocumentInEditorCommand.Execute(null);
     }
 
     /// <summary>Single click opens the document in its own tab.</summary>

@@ -1,0 +1,2 @@
+MainPackage=C:\Source2\MdViewer\src\MISX-Install\bin\x64\Release\MISX-Install_0.8.2.0_x64.appx
+SymbolPackage=C:\Source2\MdViewer\src\MISX-Install\obj\x64\Release\Symbols\MISX-Install_0.8.2.0_x64.appxsym

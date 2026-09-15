@@ -4,6 +4,7 @@ KT MD Viewer is a cross-platform Markdown viewer for Windows and Linux, built on
 
 See [docs/SPECIFICATION.md](docs/SPECIFICATION.md) for the full specification.
 
+
 ---
 
 ## What this build is
@@ -34,10 +35,10 @@ What works:
 
 What is still deliberately absent, by milestone:
 
-| Missing                                                  | Arrives in         |
-| -------------------------------------------------------- | ------------------ |
-| Cross-block selection, copy-as-source                    | M5                 |
-| Virtualization — every block is realised eagerly         | M7                 |
+| Missing                                          | Arrives in |
+| ------------------------------------------------ | ---------- |
+| Cross-block selection, copy-as-source            | M5         |
+| Virtualization — every block is realised eagerly | M7         |
 
 Raw HTML is escaped and shown dimmed rather than rendered, and remote images are
 not fetched. Both are deliberate — see SPECIFICATION.md 5.6 and 6.5.

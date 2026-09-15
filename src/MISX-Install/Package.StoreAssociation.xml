@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<StoreAssociation xmlns="http://schemas.microsoft.com/appx/2010/storeassociation">
+  <Publisher>CN=5e85f403-eaab-4aee-ac7e-fd24be1cc335</Publisher>
+  <PublisherDisplayName>Kveldstid AS</PublisherDisplayName>
+  <DeveloperAccountType>Developer</DeveloperAccountType>
+  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+</StoreAssociation>
