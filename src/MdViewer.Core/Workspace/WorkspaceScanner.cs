@@ -23,6 +23,13 @@ public sealed class WorkspaceScanner
 
     public bool ShowHiddenEntries { get; init; }
 
+    /// <summary>
+    /// Hides folders whose subtree holds no markdown file at all. A folder that
+    /// only leads to markdown further down is still shown, otherwise the path to
+    /// a document would disappear with it.
+    /// </summary>
+    public bool HideFoldersWithoutMarkdown { get; set; }
+
     public static bool IsMarkdown(string path) =>
         MarkdownExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
 
@@ -55,6 +62,8 @@ public sealed class WorkspaceScanner
             foreach (var directory in entries.EnumerateDirectories().OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
             {
                 if (ShouldHide(directory.Name, directory.Attributes)) continue;
+                if (HideFoldersWithoutMarkdown && !ContainsMarkdown(directory)) continue;
+
                 node.AddChild(new WorkspaceNode(directory.Name, directory.FullName, isDirectory: true));
             }
 
@@ -113,6 +122,38 @@ public sealed class WorkspaceScanner
         }
 
         return results;
+    }
+
+    /// <summary>
+    /// True when the folder, or anything visible beneath it, holds a markdown
+    /// file. Depth-limited so a symlink cycle cannot walk forever.
+    /// </summary>
+    private bool ContainsMarkdown(DirectoryInfo directory, int depth = 0)
+    {
+        const int MaxDepth = 32;
+        if (depth > MaxDepth) return false;
+        if (directory.Attributes.HasFlag(FileAttributes.ReparsePoint)) return false;
+
+        try
+        {
+            foreach (var file in directory.EnumerateFiles())
+            {
+                if (ShouldHide(file.Name, file.Attributes)) continue;
+                if (IsMarkdown(file.Name)) return true;
+            }
+
+            foreach (var child in directory.EnumerateDirectories())
+            {
+                if (ShouldHide(child.Name, child.Attributes)) continue;
+                if (ContainsMarkdown(child, depth + 1)) return true;
+            }
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or DirectoryNotFoundException or IOException)
+        {
+            // An unreadable folder counts as empty.
+        }
+
+        return false;
     }
 
     private bool ShouldHide(string name, FileAttributes attributes)

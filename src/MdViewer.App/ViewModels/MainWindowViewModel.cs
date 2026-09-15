@@ -422,6 +422,11 @@ public partial class MainWindowViewModel : ViewModelBase
             ApplySmartPunctuation();
         }
 
+        if (e.PropertyName == nameof(SettingsViewModel.HideFoldersWithoutMarkdown))
+        {
+            RefreshWorkspaceTree();
+        }
+
         ApplySettings();
         RequestSave();
     }
@@ -461,6 +466,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private void ApplySettings()
     {
         ThemeName = Settings.Theme;
+
+        _scanner.HideFoldersWithoutMarkdown = Settings.HideFoldersWithoutMarkdown;
 
         var app = Application.Current;
         if (app is null) return;
@@ -764,6 +771,24 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasWorkspace));
         RefreshQuickOpenSources();
         RequestSave();
+    }
+
+    /// <summary>
+    /// Re-reads the workspace root after an explorer filter change. Expansion
+    /// state is not preserved: the visible set of folders has changed, so the
+    /// tree starts from the root again.
+    /// </summary>
+    private void RefreshWorkspaceTree()
+    {
+        _scanner.HideFoldersWithoutMarkdown = Settings.HideFoldersWithoutMarkdown;
+
+        if (string.IsNullOrEmpty(WorkspaceRoot) || !Directory.Exists(WorkspaceRoot)) return;
+
+        var root = _scanner.CreateRoot(WorkspaceRoot);
+        _scanner.Load(root);
+
+        WorkspaceRoots.Clear();
+        WorkspaceRoots.Add(new FileTreeItemViewModel(root, _scanner) { IsExpanded = true });
     }
 
     private void RebuildFileWatchers()

@@ -136,6 +136,14 @@
       <CheckBox Content="Show front matter"
                 IsChecked="{Binding Settings.ShowFrontMatter, Mode=TwoWay}" />
 
+      <!-- ======================== Explorer ====================== -->
+      <TextBlock Classes="md-h4" Text="Explorer" Margin="0,16,0,0" />
+      <Border Classes="md-heading-rule" Margin="0,0,0,8" />
+
+      <CheckBox Content="Hide folders without Markdown files"
+                ToolTip.Tip="Folders whose subtree contains no Markdown file are left out of the file tree."
+                IsChecked="{Binding Settings.HideFoldersWithoutMarkdown, Mode=TwoWay}" />
+
       <!-- ==================== File watching ==================== -->
       <TextBlock Classes="md-h4" Text="File watching" Margin="0,16,0,0" />
       <Border Classes="md-heading-rule" Margin="0,0,0,8" />

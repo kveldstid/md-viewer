@@ -106,6 +106,13 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     private bool _reopenPreviousFolder = true;
 
+    /// <summary>
+    /// Keeps folders without any markdown file out of the explorer tree
+    /// (SPECIFICATION.md 5.9).
+    /// </summary>
+    [ObservableProperty]
+    private bool _hideFoldersWithoutMarkdown;
+
     /// <summary>Theme choices offered by the shell (SPECIFICATION.md 5.11).</summary>
     public ObservableCollection<string> ThemeOptions { get; } = new() { "System", "Light", "Dark" };
 
@@ -155,6 +162,8 @@ public partial class SettingsViewModel : ViewModelBase
         ShowFrontMatter = settings.ShowFrontMatter;
         EnableFileWatching = settings.EnableFileWatching;
 
+        HideFoldersWithoutMarkdown = settings.HideFoldersWithoutMarkdown;
+
         ReopenPreviousFolder = settings.ReopenPreviousFolder;
     }
 
@@ -187,6 +196,8 @@ public partial class SettingsViewModel : ViewModelBase
         settings.ShowLineNumbersInRawView = ShowLineNumbersInRawView;
         settings.ShowFrontMatter = ShowFrontMatter;
         settings.EnableFileWatching = EnableFileWatching;
+
+        settings.HideFoldersWithoutMarkdown = HideFoldersWithoutMarkdown;
 
         settings.ReopenPreviousFolder = ReopenPreviousFolder;
     }

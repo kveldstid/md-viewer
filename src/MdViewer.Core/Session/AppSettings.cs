@@ -72,6 +72,14 @@ public sealed class AppSettings
 
     public bool EnableFileWatching { get; set; } = true;
 
+    // ============================================================= explorer
+
+    /// <summary>
+    /// Hides folders in the explorer tree whose subtree contains no markdown
+    /// file. Off by default: the tree shows the folder structure as it is.
+    /// </summary>
+    public bool HideFoldersWithoutMarkdown { get; set; }
+
     // =============================================================== startup
 
     public bool ReopenPreviousFolder { get; set; } = true;
