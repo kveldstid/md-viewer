@@ -570,20 +570,6 @@ public partial class MainWindow : Window
         return candidate.StartsWith(root, StringComparison.OrdinalIgnoreCase);
     }
 
-    private void OnOpenTreeItemInEditorClick(object? sender, RoutedEventArgs e)
-    {
-        var model = Model;
-        if (model is null) return;
-
-        var tree = this.FindControl<TreeView>("FileTree");
-        model.OpenTreeItemInEditorCommand.Execute(tree?.SelectedItem as FileTreeItemViewModel);
-    }
-
-    private void OnOpenSelectedDocumentInEditorClick(object? sender, RoutedEventArgs e)
-    {
-        Model?.OpenSelectedDocumentInEditorCommand.Execute(null);
-    }
-
     /// <summary>Single click opens the document in its own tab.</summary>
     private void OnTreeSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
