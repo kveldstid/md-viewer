@@ -76,6 +76,13 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     private bool _isFollowingScroll;
 
+    /// <summary>
+    /// The tab that was on screen before the current one. Only the outgoing tab
+    /// can be asked where the reader was in it, and by the time the new tab is
+    /// selected the view no longer knows — so it is remembered here.
+    /// </summary>
+    private DocumentTabViewModel? _previousTab;
+
     [ObservableProperty]
     private DocumentTabViewModel? _selectedTab;
 
@@ -299,6 +306,14 @@ public partial class MainWindowViewModel : ViewModelBase
             ApplySmartPunctuation();
             ApplySettings();
 
+            // The session is read before anything is opened, whatever route the
+            // launch takes: it carries the recent list, and the recent list
+            // carries the remembered reading positions. Reading it late would
+            // both lose those positions and let the first save write an empty
+            // history over the real one.
+            _session = _sessionStore.Load();
+            RestoreRecent();
+
             var paths = args
                 .Where(a => !a.StartsWith('-'))
                 .Select(a => Path.GetFullPath(a))
@@ -339,10 +354,6 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     private async Task RestoreSessionAsync()
     {
-        _session = _sessionStore.Load();
-
-        RestoreRecent();
-
         if (Settings.ReopenPreviousFolder &&
             !string.IsNullOrEmpty(_settings.LastFolder) &&
             Directory.Exists(_settings.LastFolder))
@@ -550,6 +561,13 @@ public partial class MainWindowViewModel : ViewModelBase
         _session.ActiveTabIndex = SelectedTab is null ? -1 : Tabs.IndexOf(SelectedTab);
         _session.IsSidebarVisible = IsSidebarVisible;
 
+        // The recent list is what a reopen reads its position from, so the live
+        // tabs have the last word on it.
+        foreach (var tab in Tabs)
+        {
+            RememberScrollOffset(tab);
+        }
+
         _session.Recent = _recent.Items
             .Select(r => new SessionRecentDocument
             {
@@ -580,14 +598,38 @@ public partial class MainWindowViewModel : ViewModelBase
         var existing = Tabs.FirstOrDefault(t => PathsEqual(t.FullPath, full));
         if (existing is not null)
         {
+            // Selecting the tab restores the position it was left at.
             SelectedTab = existing;
             return;
         }
 
         var tab = CreateTab(full);
+
+        // A document being read for the first time opens at its beginning; one
+        // that has been read before resumes where the reader stopped
+        // (SPECIFICATION.md 5.14). The position is known before the load so the
+        // recent entry written during it does not lose it.
+        tab.ScrollOffset = RememberedScrollOffset(full);
         SelectedTab = tab;
 
         await LoadIntoAsync(tab, full).ConfigureAwait(true);
+
+        // Nothing could be scrolled before the document existed, and a newer
+        // open may have taken the screen in the meantime.
+        if (ReferenceEquals(tab, SelectedTab) && tab.HasDocument)
+        {
+            RestoreScrollOffset?.Invoke(tab.ScrollOffset);
+        }
+    }
+
+    /// <summary>
+    /// The reading position remembered for a document, or 0 when it has never
+    /// been opened before.
+    /// </summary>
+    private int RememberedScrollOffset(string fullPath)
+    {
+        var entry = _recent.Items.FirstOrDefault(r => PathsEqual(r.Path, fullPath));
+        return entry is null ? 0 : Math.Max(0, entry.ScrollOffset);
     }
 
     /// <summary>
@@ -621,7 +663,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 tab.SetDocument(result.Document);
                 tab.Title = Path.GetFileName(path);
                 tab.IsModifiedOnDisk = false;
-                RecordRecent(result.Document);
+                RecordRecent(result.Document, tab);
             }
             else
             {
@@ -1121,15 +1163,31 @@ public partial class MainWindowViewModel : ViewModelBase
 
     // ====================================================== recent documents
 
-    private void RecordRecent(LoadedDocument document)
+    /// <summary>
+    /// Moves the document to the front of the recent list. The position comes
+    /// from the tab that owns the document rather than the one on screen, so a
+    /// background load cannot overwrite it with somebody else's place.
+    /// </summary>
+    private void RecordRecent(LoadedDocument document, DocumentTabViewModel tab)
     {
         _recent.Touch(new RecentDocument(
             document.Path,
             Path.GetFileName(document.Path),
             DateTimeOffset.Now,
-            SelectedTab?.ScrollOffset ?? 0));
+            Math.Max(0, tab.ScrollOffset)));
 
         RefreshRecent();
+    }
+
+    /// <summary>
+    /// Writes the reading position of a tab into its recent entry, so the place
+    /// survives the tab being closed and the application being restarted.
+    /// </summary>
+    private void RememberScrollOffset(DocumentTabViewModel? tab)
+    {
+        if (tab is null || string.IsNullOrEmpty(tab.FullPath)) return;
+
+        _recent.UpdateScrollOffset(tab.FullPath, tab.ScrollOffset);
     }
 
     private void RefreshRecent()
@@ -1202,19 +1260,43 @@ public partial class MainWindowViewModel : ViewModelBase
         var index = Tabs.IndexOf(tab);
         if (index < 0) return;
 
+        CaptureClosingPosition(tab);
+
         Tabs.Remove(tab);
 
         if (SelectedTab == tab)
         {
             SelectedTab = Tabs.Count == 0 ? null : Tabs[Math.Min(index, Tabs.Count - 1)];
         }
+
+        if (ReferenceEquals(_previousTab, tab)) _previousTab = SelectedTab;
+    }
+
+    /// <summary>
+    /// Files the reading position of a tab that is about to be closed, so
+    /// reopening the document later lands the reader back where they were.
+    /// </summary>
+    private void CaptureClosingPosition(DocumentTabViewModel tab)
+    {
+        if (ReferenceEquals(tab, SelectedTab) && tab.HasDocument && CaptureScrollOffset is not null)
+        {
+            tab.ScrollOffset = CaptureScrollOffset();
+        }
+
+        RememberScrollOffset(tab);
     }
 
     [RelayCommand]
     private void CloseAllTabs()
     {
+        foreach (var tab in Tabs)
+        {
+            CaptureClosingPosition(tab);
+        }
+
         Tabs.Clear();
         SelectedTab = null;
+        _previousTab = null;
     }
 
     [RelayCommand]
@@ -1227,10 +1309,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
         for (var i = index - 1; i >= 0; i--)
         {
+            CaptureClosingPosition(Tabs[i]);
             Tabs.RemoveAt(i);
         }
 
         SelectedTab = tab;
+        _previousTab = tab;
     }
 
     [RelayCommand]
@@ -1243,10 +1327,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
         for (var i = Tabs.Count - 1; i > index; i--)
         {
+            CaptureClosingPosition(Tabs[i]);
             Tabs.RemoveAt(i);
         }
 
         SelectedTab = tab;
+        _previousTab = tab;
     }
 
     [RelayCommand]
@@ -1256,10 +1342,14 @@ public partial class MainWindowViewModel : ViewModelBase
 
         for (var i = Tabs.Count - 1; i >= 0; i--)
         {
-            if (!ReferenceEquals(Tabs[i], tab)) Tabs.RemoveAt(i);
+            if (ReferenceEquals(Tabs[i], tab)) continue;
+
+            CaptureClosingPosition(Tabs[i]);
+            Tabs.RemoveAt(i);
         }
 
         SelectedTab = tab;
+        _previousTab = tab;
     }
 
     // ============================================================ view mode
@@ -1513,13 +1603,46 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Runs while the outgoing tab is still the selected one, which is the only
+    /// moment the view can be asked where the reader was in it.
+    /// </summary>
+    partial void OnSelectedTabChanging(DocumentTabViewModel? oldValue, DocumentTabViewModel? newValue)
+    {
+        if (_isRestoring || oldValue is null || ReferenceEquals(oldValue, newValue)) return;
+
+        // A closed tab has already filed its position, and the view no longer
+        // shows it — asking again would answer about somebody else's document.
+        if (!Tabs.Contains(oldValue)) return;
+
+        if (oldValue.HasDocument && CaptureScrollOffset is not null)
+        {
+            oldValue.ScrollOffset = CaptureScrollOffset();
+        }
+
+        RememberScrollOffset(oldValue);
+    }
+
     partial void OnSelectedTabChanged(DocumentTabViewModel? value)
     {
+        // A single view serves every tab, so a switch that does nothing leaves
+        // the new document scrolled to the old one's position. Each tab keeps
+        // its own place instead (SPECIFICATION.md 5.9).
+        var outgoing = _previousTab;
+        _previousTab = value;
+
         SyncFindSearchText();
 
         if (value is not null)
         {
             IsStartPageRequested = false;
+
+            // A tab still loading is restored by whoever started the load; there
+            // is nothing on screen to scroll yet.
+            if (!_isRestoring && !ReferenceEquals(outgoing, value) && value.HasDocument)
+            {
+                RestoreScrollOffset?.Invoke(value.ScrollOffset);
+            }
         }
 
         RequestSave();

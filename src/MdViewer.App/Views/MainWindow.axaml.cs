@@ -477,6 +477,19 @@ public partial class MainWindow : Window
             return;
         }
 
+        // The top is asked for by offset 0, but no rendered block need own that
+        // offset — front matter and blank lines belong to nothing. Scrolling the
+        // viewport itself is the only answer that is always right.
+        if (sourceOffset <= 0)
+        {
+            var scroller = PreviewScroller;
+            if (scroller is not null)
+            {
+                scroller.Offset = new Vector(scroller.Offset.X, 0);
+                return;
+            }
+        }
+
         PresenterControl?.ScrollToSourceOffset(sourceOffset);
     }
 

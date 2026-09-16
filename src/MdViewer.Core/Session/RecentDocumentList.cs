@@ -62,6 +62,22 @@ public sealed class RecentDocumentList
         }
     }
 
+    /// <summary>
+    /// Updates the remembered reading position of an entry without disturbing
+    /// the order: where the reader is in a document says nothing about how
+    /// recently they opened it.
+    /// </summary>
+    public bool UpdateScrollOffset(string path, int scrollOffset)
+    {
+        ArgumentNullException.ThrowIfNull(path);
+
+        var index = _items.FindIndex(i => PathComparer.Equals(i.Path, path));
+        if (index < 0) return false;
+
+        _items[index] = _items[index] with { ScrollOffset = Math.Max(0, scrollOffset) };
+        return true;
+    }
+
     public bool Remove(string path)
     {
         ArgumentNullException.ThrowIfNull(path);

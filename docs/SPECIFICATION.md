@@ -172,6 +172,13 @@ The `Core` / `Rendering` split is what makes the v2 editor tractable: the editor
 | OS file association                    | Registered as a handler for `.md` on both platforms; opening a second file while running raises the existing window and adds a tab (single-instance, §7.3) |
 | Internal link                          | A relative link to another Markdown file opens in a new tab (§5.6)                                                                                         |
 
+**Where a newly opened document starts.** A document opened for the first time
+opens at the top — a reader who has never seen it has no place to return to. A
+document that has been read before opens at the reading position it was left at,
+taken from its recent entry (§5.14); reopening an already-open tab simply selects
+it, which restores that tab's own position. Positions are recorded when a tab is
+left, when it is closed, and when the session is saved.
+
 ### 4.4 Keyboard map
 
 Reading is a keyboard activity. The full map is normative.

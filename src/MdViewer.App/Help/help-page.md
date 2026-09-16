@@ -39,6 +39,12 @@ Right-click a document tab on the tab line:
 
 Entries that would close nothing are greyed out.
 
+## Reading position
+
+A document you open for the first time starts at the top. A document you have
+opened before starts where you stopped reading it, and every tab keeps its own
+position when you switch between tabs. Positions are remembered across restarts.
+
 ## Explorer context menu
 
 Right-click an entry in the Explorer tree:
